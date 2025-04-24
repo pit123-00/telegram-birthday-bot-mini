@@ -2,16 +2,19 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MessageSquare } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BirthdayForm from "@/components/BirthdayForm";
+import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 
 const Index = () => {
+  const { user } = useTelegramAuth();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
-  const handleTelegramLogin = () => {
-    // В будущем здесь будет реальная авторизация через Telegram
-    setIsLoggedIn(true);
-  };
+  useEffect(() => {
+    if (user) {
+      setIsLoggedIn(true);
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5]">
@@ -24,13 +27,9 @@ const Index = () => {
             <p className="text-gray-600">
               Войдите через Telegram, чтобы получать поздравления
             </p>
-            <Button
-              onClick={handleTelegramLogin}
-              className="w-full bg-[#0088CC] hover:bg-[#007AB8] text-white"
-            >
-              <MessageSquare className="mr-2 h-5 w-5" />
-              Войти через Telegram
-            </Button>
+            <div className="text-gray-600">
+              Это приложение работает только внутри Telegram
+            </div>
           </div>
         ) : (
           <BirthdayForm />
