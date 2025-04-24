@@ -1,10 +1,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Telegram } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import BirthdayForm from "@/components/BirthdayForm";
 
 const Index = () => {
@@ -30,7 +28,7 @@ const Index = () => {
               onClick={handleTelegramLogin}
               className="w-full bg-[#0088CC] hover:bg-[#007AB8] text-white"
             >
-              <Telegram className="mr-2 h-5 w-5" />
+              <MessageSquare className="mr-2 h-5 w-5" />
               Войти через Telegram
             </Button>
           </div>
