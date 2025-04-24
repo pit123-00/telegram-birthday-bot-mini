@@ -7,7 +7,7 @@ import BirthdayForm from "@/components/BirthdayForm";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 
 const Index = () => {
-  const { user } = useTelegramAuth();
+  const { user, isTelegramAvailable } = useTelegramAuth();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   useEffect(() => {
@@ -27,9 +27,20 @@ const Index = () => {
             <p className="text-gray-600">
               Войдите через Telegram, чтобы получать поздравления
             </p>
-            <div className="text-gray-600">
-              Это приложение работает только внутри Telegram
-            </div>
+            {isTelegramAvailable ? (
+              <div className="text-gray-600">
+                Ожидание данных из Telegram...
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="text-amber-600 font-medium">
+                  Это приложение работает только внутри Telegram
+                </div>
+                <div className="text-gray-500 text-sm">
+                  Откройте это приложение через Telegram для авторизации
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <BirthdayForm />
