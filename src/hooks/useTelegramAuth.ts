@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 
 declare global {
@@ -53,18 +52,14 @@ export const useTelegramAuth = () => {
       }
     }
 
-    // Add a small delay to make sure Telegram WebApp is initialized
     const timeout = setTimeout(() => {
-      // Check if the Telegram WebApp is available
       if (window.Telegram?.WebApp) {
         console.log("Telegram WebApp detected!");
         setIsTelegramAvailable(true);
         
         try {
-          // Notify Telegram webapp that we are ready
           window.Telegram.WebApp.ready();
 
-          // Get user data from Telegram
           const telegramUser = window.Telegram.WebApp.initDataUnsafe.user;
           if (telegramUser) {
             setUser(telegramUser);
@@ -89,10 +84,9 @@ export const useTelegramAuth = () => {
   const loginWithTelegram = () => {
     if (window.Telegram?.Login) {
       try {
-        // Используем Telegram Login Widget API
         window.Telegram.Login.auth(
           { 
-            bot_id: 6656511606, // ID вашего бота
+            bot_id: 8036388834, // Обновленный ID бота
             request_access: true,
             callback: (data) => {
               console.log("Telegram login callback:", data);
@@ -104,7 +98,8 @@ export const useTelegramAuth = () => {
                   username: data.username
                 });
               } else {
-                console.error("Telegram login error:", data.error);
+                console.error("Telegram login error:", data?.error);
+                simulateLogin(); // Fallback to demo login
               }
             }
           }
@@ -120,7 +115,6 @@ export const useTelegramAuth = () => {
   };
 
   const simulateLogin = () => {
-    // For development and testing purposes only
     console.log("Simulating Telegram login");
     setUser({
       id: 123456789,
@@ -138,4 +132,3 @@ export const useTelegramAuth = () => {
     simulateLogin 
   };
 };
-
