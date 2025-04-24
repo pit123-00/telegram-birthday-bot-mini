@@ -8,7 +8,14 @@ import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useToast } from "@/components/ui/use-toast";
 
 const Index = () => {
-  const { user, isTelegramAvailable, isInitializing, simulateLogin } = useTelegramAuth();
+  const { 
+    user, 
+    isTelegramAvailable, 
+    isInitializing, 
+    isTelegramLoginAvailable,
+    loginWithTelegram, 
+    simulateLogin 
+  } = useTelegramAuth();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { toast } = useToast();
   
@@ -48,10 +55,10 @@ const Index = () => {
                   </p>
                   <Button 
                     className="w-full bg-[#0088CC] hover:bg-[#007AB8]"
-                    onClick={simulateLogin}
+                    onClick={loginWithTelegram}
                   >
                     <LogIn className="mr-2 h-4 w-4" />
-                    Войти вручную
+                    Войти через Telegram
                   </Button>
                 </div>
               </div>
@@ -64,11 +71,18 @@ const Index = () => {
                   Рекомендуется открыть это приложение через Telegram для автоматической авторизации
                 </div>
                 <Button 
-                  className="w-full bg-[#0088CC] hover:bg-[#007AB8]" 
+                  className="w-full bg-[#0088CC] hover:bg-[#007AB8] mb-2" 
+                  onClick={loginWithTelegram}
+                >
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Войти через Telegram
+                </Button>
+                <Button 
+                  className="w-full border border-[#0088CC] bg-white text-[#0088CC] hover:bg-[#e6f3fa]" 
                   onClick={simulateLogin}
                 >
                   <User className="mr-2 h-4 w-4" />
-                  Войти как гость
+                  Войти как гость (демо)
                 </Button>
               </div>
             )}

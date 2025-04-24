@@ -16,6 +16,15 @@ declare global {
           };
         };
       };
+      Login?: {
+        auth: (options: {
+          bot_id: number;
+          request_access?: boolean;
+          redirect_url?: string;
+          lang?: string;
+          callback: (dataOrError: any) => void;
+        }) => void;
+      }
     };
   }
 }
@@ -30,12 +39,18 @@ export const useTelegramAuth = () => {
   
   const [isTelegramAvailable, setIsTelegramAvailable] = useState<boolean>(false);
   const [isInitializing, setIsInitializing] = useState<boolean>(true);
+  const [isTelegramLoginAvailable, setIsTelegramLoginAvailable] = useState<boolean>(false);
 
   useEffect(() => {
     console.log("Checking for Telegram WebApp...");
     console.log("window.Telegram exists:", !!window.Telegram);
     if (window.Telegram) {
       console.log("window.Telegram.WebApp exists:", !!window.Telegram.WebApp);
+      console.log("window.Telegram.Login exists:", !!window.Telegram.Login);
+      
+      if (window.Telegram.Login) {
+        setIsTelegramLoginAvailable(true);
+      }
     }
 
     // Add a small delay to make sure Telegram WebApp is initialized
@@ -71,6 +86,39 @@ export const useTelegramAuth = () => {
     return () => clearTimeout(timeout);
   }, []);
 
+  const loginWithTelegram = () => {
+    if (window.Telegram?.Login) {
+      try {
+        // Используем Telegram Login Widget API
+        window.Telegram.Login.auth(
+          { 
+            bot_id: 6656511606, // ID вашего бота
+            request_access: true,
+            callback: (data) => {
+              console.log("Telegram login callback:", data);
+              if (data && !data.error) {
+                setUser({
+                  id: data.id,
+                  first_name: data.first_name,
+                  last_name: data.last_name,
+                  username: data.username
+                });
+              } else {
+                console.error("Telegram login error:", data.error);
+              }
+            }
+          }
+        );
+      } catch (error) {
+        console.error("Error during Telegram login:", error);
+        simulateLogin(); // Fallback to demo login
+      }
+    } else {
+      console.log("Telegram Login API is not available, using demo login instead");
+      simulateLogin(); // Fallback to demo login
+    }
+  };
+
   const simulateLogin = () => {
     // For development and testing purposes only
     console.log("Simulating Telegram login");
@@ -81,5 +129,13 @@ export const useTelegramAuth = () => {
     });
   };
 
-  return { user, isTelegramAvailable, isInitializing, simulateLogin };
+  return { 
+    user, 
+    isTelegramAvailable, 
+    isInitializing, 
+    isTelegramLoginAvailable,
+    loginWithTelegram,
+    simulateLogin 
+  };
 };
+
