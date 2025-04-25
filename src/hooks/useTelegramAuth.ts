@@ -45,86 +45,90 @@ export const useTelegramAuth = () => {
 
   useEffect(() => {
     // Инициализируем БД при загрузке приложения
-    try {
-      initDatabase();
-      console.log("Database initialized successfully");
-    } catch (error) {
-      console.error("Failed to initialize database:", error);
-    }
-    
-    console.log("Checking for Telegram WebApp...");
-    console.log("window.Telegram exists:", !!window.Telegram);
-    if (window.Telegram) {
-      console.log("window.Telegram.WebApp exists:", !!window.Telegram.WebApp);
-      console.log("window.Telegram.Login exists:", !!window.Telegram.Login);
-      
-      if (window.Telegram.Login) {
-        setIsTelegramLoginAvailable(true);
+    const initDb = async () => {
+      try {
+        await initDatabase();
+        console.log("Database initialized successfully");
+      } catch (error) {
+        console.error("Failed to initialize database:", error);
       }
-    }
-
-    const timeout = setTimeout(() => {
-      if (window.Telegram?.WebApp) {
-        console.log("Telegram WebApp detected!");
-        setIsTelegramAvailable(true);
+      
+      console.log("Checking for Telegram WebApp...");
+      console.log("window.Telegram exists:", !!window.Telegram);
+      if (window.Telegram) {
+        console.log("window.Telegram.WebApp exists:", !!window.Telegram.WebApp);
+        console.log("window.Telegram.Login exists:", !!window.Telegram.Login);
         
-        try {
-          window.Telegram.WebApp.ready();
-
-          const telegramUser = window.Telegram.WebApp.initDataUnsafe.user;
-          if (telegramUser) {
-            setUser(telegramUser);
-            console.log("Telegram user found:", telegramUser);
-            
-            // Сохраняем пользователя в БД
-            try {
-              saveUser(telegramUser);
-            } catch (error) {
-              console.error("Failed to save user to database:", error);
-            }
-          } else {
-            console.log("No Telegram user data available");
-          }
-        } catch (error) {
-          console.error("Error initializing Telegram WebApp:", error);
+        if (window.Telegram.Login) {
+          setIsTelegramLoginAvailable(true);
         }
-      } else {
-        console.log("Telegram WebApp is not available. Are you running outside of Telegram?");
-        setIsTelegramAvailable(false);
       }
-      
-      setIsInitializing(false);
-    }, 500);
+
+      // Небольшая задержка для инициализации Telegram WebApp
+      setTimeout(() => {
+        if (window.Telegram?.WebApp) {
+          console.log("Telegram WebApp detected!");
+          setIsTelegramAvailable(true);
+          
+          try {
+            window.Telegram.WebApp.ready();
+
+            const telegramUser = window.Telegram.WebApp.initDataUnsafe.user;
+            if (telegramUser) {
+              setUser(telegramUser);
+              console.log("Telegram user found:", telegramUser);
+              
+              // Сохраняем пользователя в БД
+              try {
+                saveUser(telegramUser).catch(error => {
+                  console.error("Failed to save user to database:", error);
+                });
+              } catch (error) {
+                console.error("Failed to save user to database:", error);
+              }
+            } else {
+              console.log("No Telegram user data available");
+            }
+          } catch (error) {
+            console.error("Error initializing Telegram WebApp:", error);
+          }
+        } else {
+          console.log("Telegram WebApp is not available. Are you running outside of Telegram?");
+          setIsTelegramAvailable(false);
+        }
+        
+        setIsInitializing(false);
+      }, 500);
+    };
     
-    return () => clearTimeout(timeout);
+    initDb();
+    
+    return () => {
+      // Можно добавить очистку при размонтировании компонента, если необходимо
+    };
   }, []);
 
   const loginWithTelegram = () => {
     // Reset any previous errors
     setLoginError(null);
     
-    if (window.Telegram?.Login) {
-      try {
-        // Используем direct URL для открытия в Telegram Desktop
-        const botUsername = 'your_bot_username'; // Замените на имя вашего бота
-        const telegramUrl = `https://t.me/${botUsername}`;
-        
-        // Открываем ссылку в новом окне
-        window.open(telegramUrl, '_blank');
-        
-        // Дополнительно показываем сообщение пользователю
-        setLoginError("Перенаправляем вас в Telegram...");
-      } catch (error) {
-        console.error("Error during Telegram login:", error);
-        setLoginError("Произошла ошибка при попытке перенаправления в Telegram");
-      }
-    } else {
-      console.log("Telegram Login API is not available, using demo login instead");
-      simulateLogin(); // Fallback to demo login
+    try {
+      // Используем direct URL для открытия в Telegram Desktop
+      const botUsername = 'your_bot_username'; // Замените на имя вашего бота
+      const telegramUrl = `https://t.me/${botUsername}`;
+      
+      // Открываем ссылку в новом окне
+      window.open(telegramUrl, '_blank');
+      
+      // Дополнительно показываем сообщение пользователю
+      setLoginError("Перенаправляем вас в Telegram...");
+    } catch (error) {
+      console.error("Error during Telegram login:", error);
+      setLoginError("Произошла ошибка при попытке перенаправления в Telegram");
     }
   };
 
-  const simulateLogin = () => {
+  const simulateLogin = async () => {
     console.log("Simulating Telegram login");
     const demoUser = {
       id: 123456789,
@@ -136,7 +140,7 @@ export const useTelegramAuth = () => {
     
     // Сохраняем демо-пользователя в БД
     try {
-      saveUser(demoUser);
+      await saveUser(demoUser);
     } catch (error) {
       console.error("Failed to save demo user to database:", error);
     }

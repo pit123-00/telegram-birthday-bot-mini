@@ -1,47 +1,51 @@
 
-import Database from 'better-sqlite3';
-
-// Путь к файлу базы данных
-const dbPath = 'telegram_bot.db';
+// Используем IndexedDB для хранения данных в браузере
+// Инициализация базы данных
+let db: IDBDatabase | null = null;
 
 // Инициализация базы данных
-const db = new Database(dbPath);
+export const initDatabase = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('telegram_bot_db', 1);
 
-// Инициализация таблиц
-export const initDatabase = () => {
-  // Таблица пользователей
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY,
-      telegram_id TEXT UNIQUE,
-      first_name TEXT,
-      last_name TEXT,
-      username TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+    request.onerror = (event) => {
+      console.error('Error opening database:', event);
+      reject(new Error('Failed to open database'));
+    };
 
-  // Таблица дней рождения
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS birthdays (
-      id INTEGER PRIMARY KEY,
-      user_id INTEGER,
-      birth_date TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    )
-  `);
+    request.onsuccess = (event) => {
+      db = (event.target as IDBOpenDBRequest).result;
+      console.log('Database opened successfully');
+      resolve();
+    };
 
-  // Таблица сообщений
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS messages (
-      id INTEGER PRIMARY KEY,
-      user_id INTEGER,
-      message_text TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    )
-  `);
+    request.onupgradeneeded = (event) => {
+      const database = (event.target as IDBOpenDBRequest).result;
+      
+      // Таблица пользователей
+      if (!database.objectStoreNames.contains('users')) {
+        const userStore = database.createObjectStore('users', { keyPath: 'id', autoIncrement: true });
+        userStore.createIndex('telegram_id', 'telegram_id', { unique: true });
+        userStore.createIndex('first_name', 'first_name', { unique: false });
+        userStore.createIndex('last_name', 'last_name', { unique: false });
+        userStore.createIndex('username', 'username', { unique: false });
+      }
+      
+      // Таблица дней рождения
+      if (!database.objectStoreNames.contains('birthdays')) {
+        const birthdayStore = database.createObjectStore('birthdays', { keyPath: 'id', autoIncrement: true });
+        birthdayStore.createIndex('user_id', 'user_id', { unique: false });
+        birthdayStore.createIndex('birth_date', 'birth_date', { unique: false });
+      }
+      
+      // Таблица сообщений
+      if (!database.objectStoreNames.contains('messages')) {
+        const messagesStore = database.createObjectStore('messages', { keyPath: 'id', autoIncrement: true });
+        messagesStore.createIndex('user_id', 'user_id', { unique: false });
+        messagesStore.createIndex('message_text', 'message_text', { unique: false });
+      }
+    };
+  });
 };
 
 // Сохранение пользователя
@@ -50,52 +54,174 @@ export const saveUser = (userData: {
   first_name: string;
   last_name?: string;
   username?: string;
-}) => {
-  const stmt = db.prepare(`
-    INSERT OR REPLACE INTO users (telegram_id, first_name, last_name, username)
-    VALUES (?, ?, ?, ?)
-  `);
-  
-  const info = stmt.run(
-    userData.id.toString(),
-    userData.first_name,
-    userData.last_name || null,
-    userData.username || null
-  );
-  
-  return info.lastInsertRowid;
+}): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('Database not initialized'));
+      return;
+    }
+
+    // Проверяем, существует ли уже такой пользователь
+    const getUserTx = db.transaction('users', 'readonly');
+    const userStore = getUserTx.objectStore('users');
+    const userIndex = userStore.index('telegram_id');
+    const getUserRequest = userIndex.get(userData.id.toString());
+
+    getUserRequest.onsuccess = (event) => {
+      const existingUser = (event.target as IDBRequest).result;
+      
+      // Начинаем транзакцию для добавления или обновления пользователя
+      const tx = db!.transaction('users', 'readwrite');
+      const store = tx.objectStore('users');
+
+      let request: IDBRequest;
+      
+      if (existingUser) {
+        // Обновляем существующего пользователя
+        existingUser.first_name = userData.first_name;
+        existingUser.last_name = userData.last_name || null;
+        existingUser.username = userData.username || null;
+        request = store.put(existingUser);
+      } else {
+        // Добавляем нового пользователя
+        const user = {
+          telegram_id: userData.id.toString(),
+          first_name: userData.first_name,
+          last_name: userData.last_name || null,
+          username: userData.username || null,
+          created_at: new Date().toISOString()
+        };
+        request = store.add(user);
+      }
+
+      request.onsuccess = (event) => {
+        const id = (event.target as IDBRequest).result as number;
+        resolve(id);
+      };
+
+      request.onerror = (event) => {
+        console.error('Error saving user:', event);
+        reject(new Error('Failed to save user'));
+      };
+    };
+
+    getUserRequest.onerror = (event) => {
+      console.error('Error getting user:', event);
+      reject(new Error('Failed to check if user exists'));
+    };
+  });
 };
 
 // Сохранение дня рождения
-export const saveBirthday = (userId: number, birthDate: string) => {
-  const stmt = db.prepare(`
-    INSERT INTO birthdays (user_id, birth_date)
-    VALUES (?, ?)
-  `);
-  
-  const info = stmt.run(userId, birthDate);
-  return info.lastInsertRowid;
+export const saveBirthday = (userId: number, birthDate: string): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('Database not initialized'));
+      return;
+    }
+
+    const tx = db.transaction('birthdays', 'readwrite');
+    const store = tx.objectStore('birthdays');
+    
+    const birthday = {
+      user_id: userId,
+      birth_date: birthDate,
+      created_at: new Date().toISOString()
+    };
+    
+    const request = store.add(birthday);
+    
+    request.onsuccess = (event) => {
+      const id = (event.target as IDBRequest).result as number;
+      resolve(id);
+    };
+    
+    request.onerror = (event) => {
+      console.error('Error saving birthday:', event);
+      reject(new Error('Failed to save birthday'));
+    };
+  });
 };
 
 // Получение пользователя по telegram_id
-export const getUserByTelegramId = (telegramId: number) => {
-  const stmt = db.prepare('SELECT * FROM users WHERE telegram_id = ?');
-  return stmt.get(telegramId.toString());
+export const getUserByTelegramId = (telegramId: number): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('Database not initialized'));
+      return;
+    }
+
+    const tx = db.transaction('users', 'readonly');
+    const store = tx.objectStore('users');
+    const index = store.index('telegram_id');
+    const request = index.get(telegramId.toString());
+    
+    request.onsuccess = (event) => {
+      const user = (event.target as IDBRequest).result;
+      resolve(user);
+    };
+    
+    request.onerror = (event) => {
+      console.error('Error getting user:', event);
+      reject(new Error('Failed to get user'));
+    };
+  });
 };
 
 // Получение всех пользователей
-export const getAllUsers = () => {
-  const stmt = db.prepare('SELECT * FROM users');
-  return stmt.all();
+export const getAllUsers = (): Promise<any[]> => {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('Database not initialized'));
+      return;
+    }
+
+    const tx = db.transaction('users', 'readonly');
+    const store = tx.objectStore('users');
+    const request = store.getAll();
+    
+    request.onsuccess = (event) => {
+      const users = (event.target as IDBRequest).result;
+      resolve(users);
+    };
+    
+    request.onerror = (event) => {
+      console.error('Error getting all users:', event);
+      reject(new Error('Failed to get all users'));
+    };
+  });
 };
 
 // Получение дня рождения пользователя
-export const getUserBirthday = (userId: number) => {
-  const stmt = db.prepare('SELECT * FROM birthdays WHERE user_id = ?');
-  return stmt.get(userId);
+export const getUserBirthday = (userId: number): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('Database not initialized'));
+      return;
+    }
+
+    const tx = db.transaction('birthdays', 'readonly');
+    const store = tx.objectStore('birthdays');
+    const index = store.index('user_id');
+    const request = index.get(userId);
+    
+    request.onsuccess = (event) => {
+      const birthday = (event.target as IDBRequest).result;
+      resolve(birthday);
+    };
+    
+    request.onerror = (event) => {
+      console.error('Error getting birthday:', event);
+      reject(new Error('Failed to get birthday'));
+    };
+  });
 };
 
 // Закрытие соединения с БД
-export const closeDatabase = () => {
-  db.close();
+export const closeDatabase = (): void => {
+  if (db) {
+    db.close();
+    db = null;
+    console.log('Database connection closed');
+  }
 };
