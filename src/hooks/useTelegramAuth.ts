@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { saveUser, initDatabase } from '../services/dbService';
 
@@ -109,22 +108,40 @@ export const useTelegramAuth = () => {
   }, []);
 
   const loginWithTelegram = () => {
-    // Reset any previous errors
     setLoginError(null);
     
     try {
-      // Используем direct URL для открытия в Telegram Desktop
-      const botUsername = 'your_bot_username'; // Замените на имя вашего бота
-      const telegramUrl = `https://t.me/${botUsername}`;
-      
-      // Открываем ссылку в новом окне
-      window.open(telegramUrl, '_blank');
-      
-      // Дополнительно показываем сообщение пользователю
-      setLoginError("Перенаправляем вас в Telegram...");
+      if (window.Telegram?.Login) {
+        window.Telegram.Login.auth(
+          {
+            bot_id: 6919986117, // Замените на ID вашего бота
+            request_access: true,
+            lang: 'ru',
+            callback: (data: any) => {
+              if (data.auth_date) {
+                // Успешный вход
+                const telegramUser = {
+                  id: data.id,
+                  first_name: data.first_name,
+                  last_name: data.last_name,
+                  username: data.username
+                };
+                setUser(telegramUser);
+                saveUser(telegramUser).catch(error => {
+                  console.error("Failed to save user to database:", error);
+                });
+              } else {
+                setLoginError("Не удалось войти через Telegram");
+              }
+            }
+          }
+        );
+      } else {
+        setLoginError("Telegram Login не доступен");
+      }
     } catch (error) {
       console.error("Error during Telegram login:", error);
-      setLoginError("Произошла ошибка при попытке перенаправления в Telegram");
+      setLoginError("Произошла ошибка при попытке входа через Telegram");
     }
   };
 

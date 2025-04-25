@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { User, LogIn, AlertTriangle } from "lucide-react";
@@ -58,24 +57,18 @@ const Index = () => {
               </div>
             ) : isTelegramAvailable ? (
               <div className="text-gray-600">
-                Ожидание данных из Telegram...
-                <div className="mt-4 border-t pt-4">
-                  <p className="text-sm text-amber-600 mb-2">
-                    Если вход не происходит автоматически:
-                  </p>
-                  <Button 
-                    className="w-full bg-[#0088CC] hover:bg-[#007AB8]"
-                    onClick={loginWithTelegram}
-                  >
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Открыть в Telegram
-                  </Button>
-                </div>
+                <Button 
+                  className="w-full bg-[#0088CC] hover:bg-[#007AB8] mb-2"
+                  onClick={loginWithTelegram}
+                >
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Войти через Telegram
+                </Button>
               </div>
             ) : (
               <div className="space-y-4">
                 <div className="text-amber-600 font-medium">
-                  Это приложение работает лучше внутри Telegram
+                  Войдите через Telegram для получения поздравлений
                 </div>
                 {loginError && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm flex items-start">
@@ -83,15 +76,12 @@ const Index = () => {
                     <span>{loginError}</span>
                   </div>
                 )}
-                <div className="text-gray-500 text-sm mb-4">
-                  Нажмите кнопку ниже, чтобы открыть бота в Telegram
-                </div>
                 <Button 
                   className="w-full bg-[#0088CC] hover:bg-[#007AB8] mb-2" 
                   onClick={loginWithTelegram}
                 >
                   <LogIn className="mr-2 h-4 w-4" />
-                  Открыть в Telegram
+                  Войти через Telegram
                 </Button>
                 <Button 
                   className="w-full border border-[#0088CC] bg-white text-[#0088CC] hover:bg-[#e6f3fa]" 
