@@ -43,7 +43,6 @@ export const useTelegramAuth = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Инициализируем БД при загрузке приложения
     const initDb = async () => {
       try {
         await initDatabase();
@@ -63,7 +62,6 @@ export const useTelegramAuth = () => {
         }
       }
 
-      // Небольшая задержка для инициализации Telegram WebApp
       setTimeout(() => {
         if (window.Telegram?.WebApp) {
           console.log("Telegram WebApp detected!");
@@ -77,7 +75,6 @@ export const useTelegramAuth = () => {
               setUser(telegramUser);
               console.log("Telegram user found:", telegramUser);
               
-              // Сохраняем пользователя в БД
               try {
                 saveUser(telegramUser).catch(error => {
                   console.error("Failed to save user to database:", error);
@@ -103,7 +100,6 @@ export const useTelegramAuth = () => {
     initDb();
     
     return () => {
-      // Можно добавить очистку при размонтировании компонента, если необходимо
     };
   }, []);
 
@@ -114,7 +110,7 @@ export const useTelegramAuth = () => {
       if (window.Telegram?.Login) {
         window.Telegram.Login.auth(
           {
-            bot_id: 6919986117, // Замените на ID вашего бота
+            bot_id: 8036388834, // Корректный ID бота
             request_access: true,
             lang: 'ru',
             callback: (data: any) => {
@@ -155,7 +151,6 @@ export const useTelegramAuth = () => {
     
     setUser(demoUser);
     
-    // Сохраняем демо-пользователя в БД
     try {
       await saveUser(demoUser);
     } catch (error) {
