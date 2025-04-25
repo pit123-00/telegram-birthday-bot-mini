@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MessageSquare, User, LogIn, AlertTriangle } from "lucide-react";
+import { User, LogIn, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 import BirthdayForm from "@/components/BirthdayForm";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
@@ -33,9 +33,8 @@ const Index = () => {
   useEffect(() => {
     if (loginError) {
       toast({
-        title: "Ошибка входа",
+        title: "Информация",
         description: loginError,
-        variant: "destructive",
       });
     }
   }, [loginError, toast]);
@@ -69,7 +68,7 @@ const Index = () => {
                     onClick={loginWithTelegram}
                   >
                     <LogIn className="mr-2 h-4 w-4" />
-                    Войти через Telegram
+                    Открыть в Telegram
                   </Button>
                 </div>
               </div>
@@ -85,14 +84,14 @@ const Index = () => {
                   </div>
                 )}
                 <div className="text-gray-500 text-sm mb-4">
-                  Рекомендуется открыть это приложение через Telegram для автоматической авторизации
+                  Нажмите кнопку ниже, чтобы открыть бота в Telegram
                 </div>
                 <Button 
                   className="w-full bg-[#0088CC] hover:bg-[#007AB8] mb-2" 
                   onClick={loginWithTelegram}
                 >
                   <LogIn className="mr-2 h-4 w-4" />
-                  Войти через Telegram
+                  Открыть в Telegram
                 </Button>
                 <Button 
                   className="w-full border border-[#0088CC] bg-white text-[#0088CC] hover:bg-[#e6f3fa]" 
@@ -105,7 +104,7 @@ const Index = () => {
             )}
           </div>
         ) : (
-          <BirthdayForm />
+          <BirthdayForm userId={user?.id || 0} />
         )}
       </Card>
     </div>

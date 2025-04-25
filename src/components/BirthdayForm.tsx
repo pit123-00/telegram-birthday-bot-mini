@@ -1,18 +1,52 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { saveBirthday, getUserByTelegramId } from "../services/dbService";
+import { useToast } from "@/components/ui/use-toast";
 
-const BirthdayForm = () => {
+interface BirthdayFormProps {
+  userId: number;
+}
+
+const BirthdayForm = ({ userId }: BirthdayFormProps) => {
   const [name, setName] = useState("");
   const [birthday, setBirthday] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // В будущем здесь будет сохранение в базу данных
-    localStorage.setItem("userData", JSON.stringify({ name, birthday }));
-    setIsSubmitted(true);
+    
+    try {
+      // Получаем пользователя
+      const user = getUserByTelegramId(userId);
+      
+      if (user) {
+        // Сохраняем день рождения
+        saveBirthday(user.id, birthday);
+        
+        toast({
+          title: "Успешно",
+          description: "Ваш день рождения сохранен",
+        });
+        
+        setIsSubmitted(true);
+      } else {
+        toast({
+          title: "Ошибка",
+          description: "Пользователь не найден",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error saving birthday:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось сохранить дату рождения",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isSubmitted) {

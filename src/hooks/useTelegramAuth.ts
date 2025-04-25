@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from 'react';
+import { saveUser, initDatabase } from '../services/dbService';
 
 declare global {
   interface Window {
@@ -22,7 +23,7 @@ declare global {
           request_access?: boolean;
           redirect_url?: string;
           lang?: string;
-          callback: (dataOrError: any) => void;
+          callback?: (dataOrError: any) => void;
         }) => void;
       }
     };
@@ -43,6 +44,14 @@ export const useTelegramAuth = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Инициализируем БД при загрузке приложения
+    try {
+      initDatabase();
+      console.log("Database initialized successfully");
+    } catch (error) {
+      console.error("Failed to initialize database:", error);
+    }
+    
     console.log("Checking for Telegram WebApp...");
     console.log("window.Telegram exists:", !!window.Telegram);
     if (window.Telegram) {
@@ -66,6 +75,13 @@ export const useTelegramAuth = () => {
           if (telegramUser) {
             setUser(telegramUser);
             console.log("Telegram user found:", telegramUser);
+            
+            // Сохраняем пользователя в БД
+            try {
+              saveUser(telegramUser);
+            } catch (error) {
+              console.error("Failed to save user to database:", error);
+            }
           } else {
             console.log("No Telegram user data available");
           }
@@ -89,43 +105,18 @@ export const useTelegramAuth = () => {
     
     if (window.Telegram?.Login) {
       try {
-        window.Telegram.Login.auth(
-          { 
-            bot_id: 8036388834, // Correct bot ID
-            request_access: true,
-            lang: 'ru', // Set Russian language for Telegram widget
-            callback: (data) => {
-              console.log("Telegram login callback:", data);
-              if (data && !data.error) {
-                setUser({
-                  id: data.id,
-                  first_name: data.first_name,
-                  last_name: data.last_name,
-                  username: data.username
-                });
-              } else {
-                let errorMessage = "Ошибка при входе через Telegram";
-                if (data?.error === "BOT_DOMAIN_INVALID") {
-                  errorMessage = "Домен не подтвержден. Необходимо настроить домен в настройках бота.";
-                  console.error("Telegram login error: BOT_DOMAIN_INVALID - Please configure domain in BotFather");
-                } else {
-                  console.error("Telegram login error:", data?.error);
-                }
-                setLoginError(errorMessage);
-                
-                // Don't simulate login automatically on domain error
-                // as user should fix the domain in BotFather
-                if (data?.error !== "BOT_DOMAIN_INVALID") {
-                  simulateLogin(); // Fallback to demo login for other errors
-                }
-              }
-            }
-          }
-        );
+        // Используем direct URL для открытия в Telegram Desktop
+        const botUsername = 'your_bot_username'; // Замените на имя вашего бота
+        const telegramUrl = `https://t.me/${botUsername}`;
+        
+        // Открываем ссылку в новом окне
+        window.open(telegramUrl, '_blank');
+        
+        // Дополнительно показываем сообщение пользователю
+        setLoginError("Перенаправляем вас в Telegram...");
       } catch (error) {
         console.error("Error during Telegram login:", error);
-        setLoginError("Произошла ошибка при попытке входа через Telegram");
-        simulateLogin(); // Fallback to demo login
+        setLoginError("Произошла ошибка при попытке перенаправления в Telegram");
       }
     } else {
       console.log("Telegram Login API is not available, using demo login instead");
@@ -135,11 +126,20 @@ export const useTelegramAuth = () => {
 
   const simulateLogin = () => {
     console.log("Simulating Telegram login");
-    setUser({
+    const demoUser = {
       id: 123456789,
       first_name: "Demo",
       username: "demo_user"
-    });
+    };
+    
+    setUser(demoUser);
+    
+    // Сохраняем демо-пользователя в БД
+    try {
+      saveUser(demoUser);
+    } catch (error) {
+      console.error("Failed to save demo user to database:", error);
+    }
   };
 
   return { 
