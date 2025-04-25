@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 
 declare global {
@@ -39,6 +40,7 @@ export const useTelegramAuth = () => {
   const [isTelegramAvailable, setIsTelegramAvailable] = useState<boolean>(false);
   const [isInitializing, setIsInitializing] = useState<boolean>(true);
   const [isTelegramLoginAvailable, setIsTelegramLoginAvailable] = useState<boolean>(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
     console.log("Checking for Telegram WebApp...");
@@ -82,12 +84,16 @@ export const useTelegramAuth = () => {
   }, []);
 
   const loginWithTelegram = () => {
+    // Reset any previous errors
+    setLoginError(null);
+    
     if (window.Telegram?.Login) {
       try {
         window.Telegram.Login.auth(
           { 
-            bot_id: 8036388834, // Обновленный ID бота
+            bot_id: 8036388834, // Correct bot ID
             request_access: true,
+            lang: 'ru', // Set Russian language for Telegram widget
             callback: (data) => {
               console.log("Telegram login callback:", data);
               if (data && !data.error) {
@@ -98,14 +104,27 @@ export const useTelegramAuth = () => {
                   username: data.username
                 });
               } else {
-                console.error("Telegram login error:", data?.error);
-                simulateLogin(); // Fallback to demo login
+                let errorMessage = "Ошибка при входе через Telegram";
+                if (data?.error === "BOT_DOMAIN_INVALID") {
+                  errorMessage = "Домен не подтвержден. Необходимо настроить домен в настройках бота.";
+                  console.error("Telegram login error: BOT_DOMAIN_INVALID - Please configure domain in BotFather");
+                } else {
+                  console.error("Telegram login error:", data?.error);
+                }
+                setLoginError(errorMessage);
+                
+                // Don't simulate login automatically on domain error
+                // as user should fix the domain in BotFather
+                if (data?.error !== "BOT_DOMAIN_INVALID") {
+                  simulateLogin(); // Fallback to demo login for other errors
+                }
               }
             }
           }
         );
       } catch (error) {
         console.error("Error during Telegram login:", error);
+        setLoginError("Произошла ошибка при попытке входа через Telegram");
         simulateLogin(); // Fallback to demo login
       }
     } else {
@@ -128,6 +147,7 @@ export const useTelegramAuth = () => {
     isTelegramAvailable, 
     isInitializing, 
     isTelegramLoginAvailable,
+    loginError,
     loginWithTelegram,
     simulateLogin 
   };

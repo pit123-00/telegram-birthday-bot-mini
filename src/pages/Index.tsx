@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MessageSquare, User, LogIn } from "lucide-react";
+import { MessageSquare, User, LogIn, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 import BirthdayForm from "@/components/BirthdayForm";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
@@ -13,6 +13,7 @@ const Index = () => {
     isTelegramAvailable, 
     isInitializing, 
     isTelegramLoginAvailable,
+    loginError,
     loginWithTelegram, 
     simulateLogin 
   } = useTelegramAuth();
@@ -28,6 +29,16 @@ const Index = () => {
       });
     }
   }, [user, toast]);
+
+  useEffect(() => {
+    if (loginError) {
+      toast({
+        title: "Ошибка входа",
+        description: loginError,
+        variant: "destructive",
+      });
+    }
+  }, [loginError, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5]">
@@ -67,6 +78,12 @@ const Index = () => {
                 <div className="text-amber-600 font-medium">
                   Это приложение работает лучше внутри Telegram
                 </div>
+                {loginError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm flex items-start">
+                    <AlertTriangle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>{loginError}</span>
+                  </div>
+                )}
                 <div className="text-gray-500 text-sm mb-4">
                   Рекомендуется открыть это приложение через Telegram для автоматической авторизации
                 </div>
