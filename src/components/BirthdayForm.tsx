@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
-import { saveBirthday, getUserByTelegramId } from "../services/dbService";
+import { saveBirthday, getUserByTelegramId } from "../services/db";
 import { useToast } from "@/components/ui/use-toast";
 
 interface BirthdayFormProps {

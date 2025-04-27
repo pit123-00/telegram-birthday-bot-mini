@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { saveUser, initDatabase } from '../services/dbService';
+import { useState, useEffect } from 'react';
+import { saveUser, initDatabase } from '../services/db';
 
 declare global {
   interface Window {

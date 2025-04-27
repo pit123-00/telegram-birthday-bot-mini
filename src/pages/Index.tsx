@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { User, LogIn, AlertTriangle } from "lucide-react";
@@ -5,7 +6,7 @@ import { useState, useEffect } from "react";
 import BirthdayForm from "@/components/BirthdayForm";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useToast } from "@/components/ui/use-toast";
-import { getUserStats } from "@/services/dbService";
+import { getUserStats } from "@/services/db";
 import { formatDistanceToNow } from "date-fns";
 import { ru } from "date-fns/locale";
 
