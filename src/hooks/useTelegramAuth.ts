@@ -62,45 +62,41 @@ export const useTelegramAuth = () => {
         }
       }
 
-      setTimeout(() => {
-        if (window.Telegram?.WebApp) {
-          console.log("Telegram WebApp detected!");
-          setIsTelegramAvailable(true);
-          
-          try {
-            window.Telegram.WebApp.ready();
-
-            const telegramUser = window.Telegram.WebApp.initDataUnsafe.user;
-            if (telegramUser) {
-              setUser(telegramUser);
-              console.log("Telegram user found:", telegramUser);
-              
-              try {
-                saveUser(telegramUser).catch(error => {
-                  console.error("Failed to save user to database:", error);
-                });
-              } catch (error) {
-                console.error("Failed to save user to database:", error);
-              }
-            } else {
-              console.log("No Telegram user data available");
-            }
-          } catch (error) {
-            console.error("Error initializing Telegram WebApp:", error);
-          }
-        } else {
-          console.log("Telegram WebApp is not available. Are you running outside of Telegram?");
-          setIsTelegramAvailable(false);
-        }
+      if (window.Telegram?.WebApp) {
+        console.log("Telegram WebApp detected!");
+        setIsTelegramAvailable(true);
         
-        setIsInitializing(false);
-      }, 500);
+        try {
+          window.Telegram.WebApp.ready();
+          
+          const webAppData = window.Telegram.WebApp.initDataUnsafe;
+          console.log("WebApp data:", webAppData);
+          
+          if (webAppData && webAppData.user) {
+            const telegramUser = webAppData.user;
+            setUser(telegramUser);
+            console.log("Telegram WebApp user found:", telegramUser);
+            
+            try {
+              await saveUser(telegramUser);
+            } catch (error) {
+              console.error("Failed to save WebApp user to database:", error);
+            }
+          } else {
+            console.log("No WebApp user data available");
+          }
+        } catch (error) {
+          console.error("Error initializing Telegram WebApp:", error);
+        }
+      } else {
+        console.log("Telegram WebApp is not available. Running in browser mode.");
+        setIsTelegramAvailable(false);
+      }
+      
+      setIsInitializing(false);
     };
     
     initDb();
-    
-    return () => {
-    };
   }, []);
 
   const loginWithTelegram = () => {
