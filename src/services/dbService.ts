@@ -1,4 +1,3 @@
-
 // Используем IndexedDB для хранения данных в браузере
 // Инициализация базы данных
 let db: IDBDatabase | null = null;
@@ -6,7 +5,7 @@ let db: IDBDatabase | null = null;
 // Инициализация базы данных
 export const initDatabase = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('telegram_bot_db', 1);
+    const request = indexedDB.open('telegram_bot_db', 2); // Увеличиваем версию базы данных
 
     request.onerror = (event) => {
       console.error('Error opening database:', event);
@@ -22,13 +21,15 @@ export const initDatabase = (): Promise<void> => {
     request.onupgradeneeded = (event) => {
       const database = (event.target as IDBOpenDBRequest).result;
       
-      // Таблица пользователей
+      // Обновленная таблица пользователей
       if (!database.objectStoreNames.contains('users')) {
         const userStore = database.createObjectStore('users', { keyPath: 'id', autoIncrement: true });
         userStore.createIndex('telegram_id', 'telegram_id', { unique: true });
         userStore.createIndex('first_name', 'first_name', { unique: false });
         userStore.createIndex('last_name', 'last_name', { unique: false });
         userStore.createIndex('username', 'username', { unique: false });
+        userStore.createIndex('photo_url', 'photo_url', { unique: false }); // Новое поле для аватарки
+        userStore.createIndex('description', 'description', { unique: false }); // Новое поле для описания
       }
       
       // Таблица дней рождения
@@ -54,6 +55,7 @@ export const saveUser = (userData: {
   first_name: string;
   last_name?: string;
   username?: string;
+  photo_url?: string; // Добавляем поле для аватарки
 }): Promise<number> => {
   return new Promise((resolve, reject) => {
     if (!db) {
@@ -70,28 +72,28 @@ export const saveUser = (userData: {
     getUserRequest.onsuccess = (event) => {
       const existingUser = (event.target as IDBRequest).result;
       
-      // Начинаем транзакцию для добавления или обновления пользователя
       const tx = db!.transaction('users', 'readwrite');
       const store = tx.objectStore('users');
 
       let request: IDBRequest;
       
+      const userToSave = {
+        telegram_id: userData.id.toString(),
+        first_name: userData.first_name,
+        last_name: userData.last_name || null,
+        username: userData.username || null,
+        photo_url: userData.photo_url || null,
+        description: '', // Пустое описание по умолчанию
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
       if (existingUser) {
-        // Обновляем существующего пользователя
-        existingUser.first_name = userData.first_name;
-        existingUser.last_name = userData.last_name || null;
-        existingUser.username = userData.username || null;
-        request = store.put(existingUser);
+        // Сохраняем старое описание если оно есть
+        userToSave.description = existingUser.description || '';
+        request = store.put({ ...existingUser, ...userToSave });
       } else {
-        // Добавляем нового пользователя
-        const user = {
-          telegram_id: userData.id.toString(),
-          first_name: userData.first_name,
-          last_name: userData.last_name || null,
-          username: userData.username || null,
-          created_at: new Date().toISOString()
-        };
-        request = store.add(user);
+        request = store.add(userToSave);
       }
 
       request.onsuccess = (event) => {

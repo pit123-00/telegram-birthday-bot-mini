@@ -73,7 +73,10 @@ export const useTelegramAuth = () => {
           console.log("WebApp data:", webAppData);
           
           if (webAppData && webAppData.user) {
-            const telegramUser = webAppData.user;
+            const telegramUser = {
+              ...webAppData.user,
+              photo_url: webAppData.user?.photo_url || null
+            };
             setUser(telegramUser);
             console.log("Telegram WebApp user found:", telegramUser);
             
@@ -106,17 +109,17 @@ export const useTelegramAuth = () => {
       if (window.Telegram?.Login) {
         window.Telegram.Login.auth(
           {
-            bot_id: 8036388834, // Корректный ID бота
+            bot_id: 8036388834,
             request_access: true,
             lang: 'ru',
             callback: (data: any) => {
               if (data.auth_date) {
-                // Успешный вход
                 const telegramUser = {
                   id: data.id,
                   first_name: data.first_name,
                   last_name: data.last_name,
-                  username: data.username
+                  username: data.username,
+                  photo_url: data.photo_url
                 };
                 setUser(telegramUser);
                 saveUser(telegramUser).catch(error => {
