@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { User, LogIn, AlertTriangle } from "lucide-react";
@@ -9,6 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { getUserStats } from "@/services/db";
 import { formatDistanceToNow } from "date-fns";
 import { ru } from "date-fns/locale";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const Index = () => {
   const { 
@@ -120,6 +120,22 @@ const Index = () => {
           </div>
         ) : (
           <>
+            <div className="flex flex-col items-center space-y-4">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={user?.photo_url} alt={user?.first_name} />
+                <AvatarFallback>{user?.first_name?.[0]?.toUpperCase()}</AvatarFallback>
+              </Avatar>
+              
+              <div className="text-center space-y-2">
+                <h2 className="text-2xl font-bold text-[#0088CC]">
+                  {user?.first_name} {user?.last_name}
+                </h2>
+                {user?.username && (
+                  <p className="text-gray-600">@{user.username}</p>
+                )}
+              </div>
+            </div>
+
             {userStats && (
               <div className="mb-4 text-center text-gray-600">
                 <p className="mb-2">
