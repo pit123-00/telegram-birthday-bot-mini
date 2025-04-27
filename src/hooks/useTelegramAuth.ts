@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { saveUser, initDatabase } from '../services/db';
 
@@ -13,6 +14,7 @@ declare global {
             first_name: string;
             last_name?: string;
             username?: string;
+            photo_url?: string;  // Added photo_url property to fix type error
           };
         };
       };
