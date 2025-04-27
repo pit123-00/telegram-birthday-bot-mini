@@ -5,7 +5,7 @@ let db: IDBDatabase | null = null;
 // Инициализация базы данных
 export const initDatabase = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('telegram_bot_db', 2); // Увеличиваем версию базы данных
+    const request = indexedDB.open('telegram_bot_db', 3); // Увеличиваем версию базы данных
 
     request.onerror = (event) => {
       console.error('Error opening database:', event);
@@ -30,6 +30,9 @@ export const initDatabase = (): Promise<void> => {
         userStore.createIndex('username', 'username', { unique: false });
         userStore.createIndex('photo_url', 'photo_url', { unique: false }); // Новое поле для аватарки
         userStore.createIndex('description', 'description', { unique: false }); // Новое поле для описания
+        userStore.createIndex('login_count', 'login_count', { unique: false });
+        userStore.createIndex('last_login', 'last_login', { unique: false });
+        userStore.createIndex('previous_login', 'previous_login', { unique: false });
       }
       
       // Таблица дней рождения
@@ -50,7 +53,7 @@ export const initDatabase = (): Promise<void> => {
 };
 
 // Сохранение пользователя
-export const saveUser = (userData: {
+export const saveUser = async (userData: {
   id: number;
   first_name: string;
   last_name?: string;
@@ -75,7 +78,7 @@ export const saveUser = (userData: {
       const tx = db!.transaction('users', 'readwrite');
       const store = tx.objectStore('users');
 
-      let request: IDBRequest;
+      const currentTime = new Date().toISOString();
       
       const userToSave = {
         telegram_id: userData.id.toString(),
@@ -83,18 +86,17 @@ export const saveUser = (userData: {
         last_name: userData.last_name || null,
         username: userData.username || null,
         photo_url: userData.photo_url || null,
-        description: '', // Пустое описание по умолчанию
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        description: existingUser?.description || '',
+        login_count: existingUser ? existingUser.login_count + 1 : 1,
+        previous_login: existingUser?.last_login || null,
+        last_login: currentTime,
+        created_at: existingUser?.created_at || currentTime,
+        updated_at: currentTime
       };
       
-      if (existingUser) {
-        // Сохраняем старое описание если оно есть
-        userToSave.description = existingUser.description || '';
-        request = store.put({ ...existingUser, ...userToSave });
-      } else {
-        request = store.add(userToSave);
-      }
+      const request = existingUser 
+        ? store.put({ ...existingUser, ...userToSave })
+        : store.add(userToSave);
 
       request.onsuccess = (event) => {
         const id = (event.target as IDBRequest).result as number;
@@ -215,6 +217,41 @@ export const getUserBirthday = (userId: number): Promise<any> => {
     request.onerror = (event) => {
       console.error('Error getting birthday:', event);
       reject(new Error('Failed to get birthday'));
+    };
+  });
+};
+
+// Получение статистики пользователя
+export const getUserStats = async (telegramId: number): Promise<{
+  loginCount: number;
+  previousLogin: string | null;
+} | null> => {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('Database not initialized'));
+      return;
+    }
+
+    const tx = db.transaction('users', 'readonly');
+    const store = tx.objectStore('users');
+    const index = store.index('telegram_id');
+    const request = index.get(telegramId.toString());
+
+    request.onsuccess = (event) => {
+      const user = (event.target as IDBRequest).result;
+      if (user) {
+        resolve({
+          loginCount: user.login_count || 1,
+          previousLogin: user.previous_login
+        });
+      } else {
+        resolve(null);
+      }
+    };
+
+    request.onerror = (event) => {
+      console.error('Error getting user stats:', event);
+      reject(new Error('Failed to get user stats'));
     };
   });
 };

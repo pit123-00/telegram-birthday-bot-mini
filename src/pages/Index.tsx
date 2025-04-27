@@ -5,6 +5,9 @@ import { useState, useEffect } from "react";
 import BirthdayForm from "@/components/BirthdayForm";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useToast } from "@/components/ui/use-toast";
+import { getUserStats } from "@/services/dbService";
+import { formatDistanceToNow } from "date-fns";
+import { ru } from "date-fns/locale";
 
 const Index = () => {
   const { 
@@ -17,17 +20,38 @@ const Index = () => {
     simulateLogin 
   } = useTelegramAuth();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userStats, setUserStats] = useState<{
+    loginCount: number;
+    previousLogin: string | null;
+  } | null>(null);
   const { toast } = useToast();
   
   useEffect(() => {
+    const loadUserStats = async () => {
+      if (user?.id) {
+        try {
+          const stats = await getUserStats(user.id);
+          setUserStats(stats);
+        } catch (error) {
+          console.error('Error loading user stats:', error);
+        }
+      }
+    };
+
     if (user) {
       setIsLoggedIn(true);
+      loadUserStats();
+      
+      const welcomeMessage = userStats?.previousLogin
+        ? `С возвращением, ${user.first_name}! Это ваш ${userStats.loginCount}-й вход. Последний раз вы заходили ${formatDistanceToNow(new Date(userStats.previousLogin), { locale: ru })} назад.`
+        : `Добро пожаловать, ${user.first_name}! Это ваш первый вход.`;
+      
       toast({
         title: "Успешный вход",
-        description: `Добро пожаловать, ${user.first_name}!`,
+        description: welcomeMessage,
       });
     }
-  }, [user, toast]);
+  }, [user, userStats, toast]);
 
   useEffect(() => {
     if (loginError) {
@@ -94,7 +118,21 @@ const Index = () => {
             )}
           </div>
         ) : (
-          <BirthdayForm userId={user?.id || 0} />
+          <>
+            {userStats && (
+              <div className="mb-4 text-center text-gray-600">
+                <p className="mb-2">
+                  Количество входов: {userStats.loginCount}
+                </p>
+                {userStats.previousLogin && (
+                  <p>
+                    Последний вход: {formatDistanceToNow(new Date(userStats.previousLogin), { locale: ru })} назад
+                  </p>
+                )}
+              </div>
+            )}
+            <BirthdayForm userId={user?.id || 0} />
+          </>
         )}
       </Card>
     </div>
