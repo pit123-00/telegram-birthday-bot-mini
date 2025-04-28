@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { saveUser, initDatabase } from '../services/db';
 
@@ -14,7 +13,7 @@ declare global {
             first_name: string;
             last_name?: string;
             username?: string;
-            photo_url?: string;  // Added photo_url property to fix type error
+            photo_url?: string;
           };
         };
       };
@@ -37,6 +36,7 @@ export const useTelegramAuth = () => {
     first_name: string;
     last_name?: string;
     username?: string;
+    photo_url?: string;
   } | null>(null);
   
   const [isTelegramAvailable, setIsTelegramAvailable] = useState<boolean>(false);
@@ -147,7 +147,8 @@ export const useTelegramAuth = () => {
     const demoUser = {
       id: 123456789,
       first_name: "Demo",
-      username: "demo_user"
+      username: "demo_user",
+      photo_url: null
     };
     
     setUser(demoUser);
