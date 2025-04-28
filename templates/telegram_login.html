@@ -1,0 +1,75 @@
+
+{% extends "layout.html" %}
+
+{% block head %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if Telegram WebApp is available
+        if (window.Telegram && window.Telegram.WebApp) {
+            document.getElementById('webAppStatus').textContent = 'Telegram WebApp обнаружен!';
+            
+            try {
+                window.Telegram.WebApp.ready();
+                const webAppData = window.Telegram.WebApp.initDataUnsafe;
+                
+                if (webAppData && webAppData.user) {
+                    const userData = webAppData.user;
+                    
+                    fetch('{{ url_for("auth_callback") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(userData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.redirect) {
+                            window.location.href = data.redirect;
+                        }
+                    });
+                } else {
+                    document.getElementById('webAppStatus').textContent = 'Данные пользователя недоступны';
+                }
+            } catch (error) {
+                document.getElementById('webAppStatus').textContent = 'Ошибка: ' + error.message;
+            }
+        } else {
+            document.getElementById('webAppStatus').textContent = 'Telegram WebApp недоступен';
+            
+            // Show login button for browser login
+            document.getElementById('browserLogin').style.display = 'block';
+        }
+    });
+    
+    function loginWithTelegram() {
+        const botId = {{ bot_id }};
+        window.location.href = `https://oauth.telegram.org/auth?bot_id=${botId}&origin=https://${window.location.host}&return_to=${window.location.origin}/auth/callback`;
+    }
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="text-center space-y-6">
+    <h1 class="text-2xl font-bold text-telegram">Вход через Telegram</h1>
+    
+    <div class="text-gray-600" id="webAppStatus">
+        Проверка Telegram WebApp...
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-telegram mx-auto mt-2"></div>
+    </div>
+    
+    <div id="browserLogin" style="display: none">
+        <p class="text-gray-600 mb-4">Войдите через свою учетную запись Telegram:</p>
+        <button onclick="loginWithTelegram()" class="w-full bg-telegram hover:bg-telegram/90 text-white px-4 py-2 rounded">
+            <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                <polyline points="10 17 15 12 10 7"></polyline>
+                <line x1="15" y1="12" x2="3" y2="12"></line>
+            </svg>
+            Войти через Telegram
+        </button>
+    </div>
+    
+    <a href="{{ url_for('index') }}" class="text-telegram hover:underline block mt-4">Вернуться на главную</a>
+</div>
+{% endblock %}

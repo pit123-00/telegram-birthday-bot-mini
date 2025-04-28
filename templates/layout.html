@@ -1,0 +1,41 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Birthday Bot</title>
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        telegram: '#0088CC',
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-[#F5F5F5] min-h-screen">
+    <div class="min-h-screen flex items-center justify-center">
+        <div class="w-[90%] max-w-md p-6 space-y-6 bg-white shadow-md rounded-lg">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="bg-telegram/10 text-telegram px-4 py-2 rounded">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</body>
+</html>

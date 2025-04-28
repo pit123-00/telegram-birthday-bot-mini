@@ -1,0 +1,74 @@
+
+{% extends "layout.html" %}
+
+{% block content %}
+    {% if is_logged_in %}
+        <div class="flex flex-col items-center space-y-4">
+            <div class="h-24 w-24 rounded-full bg-gray-200 overflow-hidden">
+                {% if user.photo_url %}
+                    <img src="{{ user.photo_url }}" alt="{{ user.first_name }}" class="h-full w-full object-cover" />
+                {% else %}
+                    <div class="h-full w-full flex items-center justify-center bg-telegram text-white text-2xl font-bold">
+                        {{ user.first_name[0]|upper }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="text-center space-y-2">
+                <h2 class="text-2xl font-bold text-telegram">
+                    {{ user.first_name }} {% if user.last_name %}{{ user.last_name }}{% endif %}
+                </h2>
+                {% if user.username %}
+                    <p class="text-gray-600">@{{ user.username }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if user_stats %}
+            <div class="mb-4 text-center text-gray-600">
+                <p class="mb-2">
+                    Количество входов: {{ user_stats.loginCount }}
+                </p>
+                {% if user_stats.previousLogin %}
+                    <p>
+                        Последний вход: {{ user_stats.previousLogin|timesince }} назад
+                    </p>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <a href="{{ url_for('birthday_form') }}" class="w-full bg-telegram hover:bg-telegram/90 text-white px-4 py-2 rounded block text-center">
+            Указать день рождения
+        </a>
+        
+        <a href="{{ url_for('logout') }}" class="w-full border border-telegram bg-white text-telegram hover:bg-telegram/5 px-4 py-2 rounded block text-center mt-2">
+            Выйти
+        </a>
+    {% else %}
+        <div class="space-y-4 text-center">
+            <h1 class="text-2xl font-bold text-telegram">
+                Добро пожаловать!
+            </h1>
+            <p class="text-gray-600">
+                Войдите через Telegram, чтобы получать поздравления
+            </p>
+            
+            <a href="{{ url_for('telegram_login') }}" class="w-full bg-telegram hover:bg-telegram/90 text-white px-4 py-2 rounded block">
+                <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                    <polyline points="10 17 15 12 10 7"></polyline>
+                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                </svg>
+                Войти через Telegram
+            </a>
+            
+            <a href="{{ url_for('demo_login') }}" class="w-full border border-telegram bg-white text-telegram hover:bg-telegram/5 px-4 py-2 rounded block">
+                <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                Войти как гость (демо)
+            </a>
+        </div>
+    {% endif %}
+{% endblock %}
